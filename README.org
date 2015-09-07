@@ -1,0 +1,74 @@
+* BinaryTreeHouse
+
+This Haskell package implements a data structure which for want of a better name I am calling a
+~BinaryTreeHouse~ simply because it is essentially a binary tree, but with the difference that the
+terminal "Leaf" nodes can have one type, while the "Branches" can have a completely different type.
+When you draw a structure such as this I think it looks like a tree with tree houses on all the
+branches - hence the name.
+
+This package's README is a literate program, so this file contains all the code contained in this
+package written, explained and tested all in one place. Currently this is done with Emacs' Org Mode
+and more specifically Org-Babel to deal with all the source code. For obvious reasons this makes it
+difficult for people who don't use or are not familiar with emacs to contribute and I'd like to work
+towards a more portable solution both in terms of software used and markup formats used.
+
+Without further ado, let's get into it
+** TODO Include diagrams representing the differences between the data structures
+
+* Implementation Documentation
+
+This section of the document goes into detail about how this package is implemented, it explains
+many of the whys and hows which make up this package. Any major new contributions must be written up
+here so that we have a comprehensive up to date reference for anyone who wishes to get to grips with
+the internals of the package.
+
+** Defining the Tree
+
+The ~BinaryTreeHouse~ datatype is recursive in nature where nodes are either a terminal Leaf node
+containing a value or a Branch node which contains a value and left and right sub-trees. We also
+must consider the possibilty of an empty tree, which we can represent with a ~Nil~ data
+constructor. So in Haskell we write
+#+begin_src haskell :noweb-ref binarytreehouse-def
+data BinaryTreeHouse a b = Nil
+                         | Leaf a
+                         | Branch b (BinaryTreeHouse a b) (BinaryTreeHouse a b)
+#+end_src
+
+Where ~a~ and ~b~ are type parameters and can replaced by any type. Now if we let Haskell derive the
+instance of ~Show~ for this datatype for us then if we ask Haskell to show us the tree consisting of
+a single branch containing the letter 'a' and two Leaves containing the value '2' and '5' then it
+will represent the tree as follows
+#+begin_src haskell
+Branch "a" (Leaf 2) (Leaf 5)
+#+end_src
+
+Which is all well and good for simple trees but this very quicklt gets out of hand as you increase
+the complexity of the tree, so instead we create our own show instance to give us an ASCII
+representation of our tree instead to look something like the following
+#+begin_src
+     +-----+
+     | "a" |
+     +-----+
++---+       +---+
+| 2 |       | 5 |
++---+       +---+
+#+end_src
+
+which makes the structure of the tree immediately more obvious. So we can write our show instance as
+follows
+#+begin_src haskell :noweb-ref binarytreehouse-show-instance
+instance (Show a, Show b) => Show (BinaryTreeHouse a b) where
+    show t = show $ showBinaryTreeHouse t
+
+showBinaryTreeHouse :: (Show a, Show b) => BinaryTreeHouse a b -> TextBlock
+showBinaryTreeHouse Nil = makeTextBlock [""]
+showBinaryTreeHouse (Leaf x) = showBox 0 x
+showBinaryTreeHouse (Branch h x y) = addToTheRight 0 (addToTheRight 0 left house) right
+  where house = showBox 0 h
+        left = padTop (height house) (showBinaryTreeHouse x)
+        right = padTop (height house) (showBinaryTreeHouse y)
+#+end_src
+
+As you can see this makes use of the ~TextBlock~ datatype which handles the manipulation of the
+various blocks of text and allows us to align thing easily, since this is defined in another module
+I will not go into details here, please refer to the section on ~Showing the Tree~
