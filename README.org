@@ -71,4 +71,219 @@ showBinaryTreeHouse (Branch h x y) = addToTheRight 0 (addToTheRight 0 left house
 
 As you can see this makes use of the ~TextBlock~ datatype which handles the manipulation of the
 various blocks of text and allows us to align thing easily, since this is defined in another module
-I will not go into details here, please refer to the section on ~Showing the Tree~
+I will not go into details here, please refer to the section on ~Showing the Tree~ for full details.
+
+Next I define three functions to let us map functions over various parts of the tree - the leaves,
+branches or both. Ideally I'd like us to be able to write a single function which encompassess all
+of these details and create a Functor instance for this datatype. However I am not sure if this
+could be a Functor or if a function is possible, still trying to get my head around that one.
+#+begin_src haskell :noweb-ref binarytreehouse-map
+binTreeMap :: (a -> b) -> BinaryTreeHouse a a -> BinaryTreeHouse bb
+binTreeMap _ Nil = Nil
+binTreeMap f (Leaf a) = Leaf (f a)
+binTreeMap f (Branch house left right) = Branch (f house) (binTreeMap f left) (binTreeMap f right)
+
+binTreeLeafMap :: (a -> b) -> BinaryTreeHouse a c -> BinaryTreeHouse b c
+binTreeLeafMap _ Nil = Nil
+binTreeLeafMap f (Leaf a) = Leaf (f a)
+binTreeLeafMap f (Branch house left right) = Branch house (binTreeLeafMap f left) (binTreeLeafMap f right)
+
+binTreeBranchMap :: (b -> c) -> BinaryTreeHouse a b -> BinaryTreeHouse a c
+binTreeBranchMap _ Nil = Nil
+binTreeBranchMap _ (Leaf a) = Leaf a
+binTreeBranchMap f (Branch house left right) = Branch (f house) (binTreeBranchMap f left) (binTreeBranchMap right)
+#+end_src
+
+Finally we define a function that allows you to combine two ~BinaryTreeHouse~ structures underneath
+a common branch.
+#+begin_src haskell :noweb-ref binarytreehouse-growth
+growTree :: b -> BinaryTreeHouse a b -> BinaryTreeHouse a b -> BinaryTreeHouse a b
+growTree _ Nil Nil = Nil
+growTree house left right = Branch house left right
+#+end_src
+
+With everything defined we can now define our ~BinaryTreeHouse~ module
+#+begin_src haskell :tangle src/Data/BinaryTreeHouse.hs :noweb yes :padline no
+module Data.BinaryTreeHouse
+(
+    BinaryTreeHouse(..),
+
+    binTreeMap,
+    binTreeLeafMap,
+    binTreeBranchMap,
+
+    growTree
+) where
+
+import Data.Block
+
+<<binarytreehouse-def>>
+<<binarytreehouse-show-instance>>
+<<binarytreehouse-map>>
+<<binarytreehouse-growth>>
+#+end_src
+
+
+** Showing the BinaryTreeHouse
+
+As mentioned in the previous section if we let Haskell derive the show instance for us it can very
+quickly become difficult to interpret the structure of the tree when shown, so instead we will
+derive our own instance.
+
+By rendering the tree in ASCII and the recursive nature of the structure we have to be able to
+manipulate lists of strings easily so that all the characters are aligned properly. To help abstract
+over the issue we create the ~TextBlock~ datatype which we will write various functions for to help
+arrange a number of them.
+
+So what is a ~TextBlock~ made from? Well, we need to keep track of its width and height and of
+course the text it contains, so using Haskell's record syntax we define the following
+#+begin_src haskell :noweb-ref textblock-def
+data TextBlock = TextBlock {width :: Int, height :: Int, contents :: [String]}
+#+end_src
+
+also we need to be able to view the contents so let's also define a ~Show~ instance
+#+begin_src haskell :noweb-ref textblock-show-instance
+instance Show TextBlock where
+    show (TextBlock _ _ str) = unlines str
+#+end_src
+
+Now while we can manually create a TextBlock we might give the wrong widths and height so it would
+be better to simply pass a list of strings to a function which we wish to make into a block and have
+the function do the rest.
+
+The following function not only converts a list of strings into a TextBlock, but also makes sure
+that all lines in the block are as long as the longest line in the block. Any lines that are shorter
+than this have spaces appended to them until they are the correct length.
+#+begin_src haskell :noweb-ref textblock-make
+makeTextBlock :: [String] -> TextBlock
+makeTextBlock str = TextBlock {width = newWidth, height = newHeight, contents = newContents}
+  where newWidth = maximum $ map length str
+        newHeight = length str
+        newContents = map (makeLength newWidth s)
+        makeLength x s
+            | length s < x = s ++ spacePadding (x - length s)
+            | otherwise = s
+
+spacePadding :: Int -> String
+spacePadding x = replicate x ' '
+#+end_src
+
+Before we get to combining TextBlocks we need to define our own zip function, since the zip
+implementation in Haskell's Prelude stops when one of the zip's arguments runs out the longer list
+is truncated. In our case that would lead to TextBlocks losing text when stuck together - not good!
+
+So we define our own ~zipWithPad~ where given a two lists ~[a]~, ~[b]~ to zip together with
+some function ~(a -> b -> c)~ and something to pad the lists with in case they run out then we can
+define as follows
+#+begin_src haskell :noweb-ref zip-funcs
+zipWithPad :: (a -> b -> c) -> a -> b -> [a] -> [b] -> [c]
+zipWithPad f a _ [] ys = zipWith f (repeat a) ys
+zipWithPad f _ b xs [] = zipWith f xs (repeat b)
+zipwithPad f a b (x:xs) (y:ys) = f x y : zipWithPadding f a b xs ys
+#+end_src
+
+In particular the above function comes in useful when we want to stitch two boxes together side by
+side.
+#+begin_src haskell :noweb-ref zip-funcs
+sideBySideZip :: [String] -> [String] -> [String]
+sideBySideZip x y = zipWithPad (++) (spacePadding x') (spacePadding y') x y
+  where x' = max $ map length x
+        y' = max $ map length y
+#+end_src
+
+We need to be able to combine TextBlocks together so we now write a number of functions which allow
+us to do this with the option to add pading between them.
+#+begin_src haskell :noweb-ref textblock-combination-funcs
+-- Adds the second block on top of the first
+addOnTop :: Int -> TextBlock -> TextBlock -> TextBlock
+addOnTop pad x y = TextBlock {width = newWidth, height = newHeight, contents = newContents}
+  where newWidth = max (width x) (width y)
+        newHeight = height x + height y + pad
+        padding = replicate pad $ spacePadding newWidth
+        newContents = contents (enforceWidth y) ++ padding ++ contents (enforceWidth x)
+        enforceWidth a
+            | width a < newWidth = padRight (newWidth - width a) a
+            | otherwise  = a
+
+addBelow :: Int -> TextBlock -> TextBlock -> TextBlock
+addBelow pad x y = addOnTop pad y x
+
+addToTheRight :: Int -> TextBlock -> TextBlock
+addToTheRight pad x y = TextBlock {width = newWidth, height = newHeight, contents = newContents}
+  where newWidth = width x + width y + pad
+        newHeight = max (height x) (height y)
+        x' = x {width = width x + 1, contents = map (++ spacePadding pad) (contents x)}
+        newContents = sizeBySideZip (contents x') (contents y)
+
+addToTheLeft :: Int -> TextBlock -> TextBlock -> TextBlock
+addToTheLeft pad x y = addToTheRight pad y x
+#+end_src
+
+It may also be useful to pad blocks simply for alignment purposes so we provide a number of
+functions to pad a ~TextBlock~ with a given number of spaces. Here we also create a datatype to help
+simplify the implementation of the ~padBlock~ function.
+#+begin_src haskell :noweb-ref padfunc-datatype-def
+data Side = STop | SBottom | SLeft | SRight
+#+end_src
+
+
+#+begin_src haskell :noweb-ref textblock-padding-funcs
+padBlock :: Side -> Int -> TextBlock -> TextBlock
+padBlock _ 0 x = x
+padBlock STop pad x = addOnTop 0 x (makeTextBlock $ replicate pad $ spacePadding $ width x)
+padBlock SBottom pad x = addBelow 0 x (makeTextBlock $ replicate pad $ spacePadding $ width x)
+padBlock SLeft pad x = addToTheLeft 0 x (makeTextBlock $ replicate (height x) $ spacePadding pad)
+padBlock SRight pad x = addToTheRight 0 x (makeTextBlock $ replicate (height x) $ spacePadding pad)
+
+padTop :: Int -> TextBlock -> TextBlock
+padTop = padBlock STop
+
+padBottom :: Int -> TextBlock -> TextBlock
+padBottom = padBlock SBottom
+
+padLeft :: Int -> TextBlock -> TextBlock
+padLeft = padBlock SLeft
+
+padRight :: Int -> TextBlock -> TextBlock
+padRight = padBlock SRight
+#+end_src
+
+Finally! We can now create our ~TextBlock~ module
+#+begin_src haskell :tangle src/Data/TextBlock.hs :noweb yes :padline no
+module Data.TextBlock
+(
+    TextBlock,
+    makeTextBlock,
+
+    padRight,
+    padLeft,
+    padTop,
+    padBottom,
+
+    addOnTop,
+    addBelow,
+    addToTheRight,
+    addToTheLeft
+
+) where
+
+-- Data Types
+<<padfunc-datatype-def>>
+<<textblock-def>>
+
+-- Instance Definitions
+<<textblock-show-instance>>
+
+-- Functions
+<<textblock-make>>
+<<textblock-combination-funcs>>
+<<textblock-padding-funcs>>
+<<zip-funcs>>
+#+end_src
+
+*** TODO Investigate making a monoid instance for the TextBlock
+Would this simplify any of our existing functions for us?
+*** TODO Add function that allows you to add a border to a TextBlock
+Then reimplement the showBinaryTreeHouse function in terms of this function.
+*** TODO Investigate simplifying the add* functions
+Can we use the ~makeBlock~ function to simplify things?
