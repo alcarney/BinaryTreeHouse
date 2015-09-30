@@ -6,15 +6,18 @@ terminal "Leaf" nodes can have one type, while the "Branches" can have a complet
 When you draw a structure such as this I think it looks like a tree with tree houses on all the
 branches - hence the name.
 
-This package's README is a literate program, so this file contains all the code contained in this
+This package's README is a [[https://en.wikipedia.org/wiki/Literate_programming][literate program]], so this file contains all the code contained in this
 package written, explained and tested all in one place. Currently this is done with Emacs' Org Mode
 and more specifically Org-Babel to deal with all the source code. For obvious reasons this makes it
 difficult for people who don't use or are not familiar with emacs to contribute and I'd like to work
 towards a more portable solution both in terms of software used and markup formats used.
 
-Without further ado, let's get into it
-** TODO Include diagrams representing the differences between the data structures
+I also want to take the opportunity of this fairly simple project to learn "How to do things right"
+i,e. I want to learn how to do proper testing, packing and distribution etc. As well as getting a
+feel for what working on a literate program is like and starting to find/create tools that help make
+the process easier - after all no one will want to do it of it's hard ;)
 
+Without further ado, let's get into it
 * Implementation Documentation
 
 This section of the document goes into detail about how this package is implemented, it explains
