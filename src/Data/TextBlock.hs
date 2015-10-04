@@ -28,7 +28,7 @@ makeTextBlock :: [String] -> TextBlock
 makeTextBlock str = TextBlock {width = newWidth, height = newHeight, contents = newContents}
   where newWidth = maximum $ map length str
         newHeight = length str
-        newContents = map (makeLength newWidth s)
+        newContents = map (makeLength newWidth str)
         makeLength x s
             | length s < x = s ++ spacePadding (x - length s)
             | otherwise = s
