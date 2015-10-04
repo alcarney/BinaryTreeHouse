@@ -94,7 +94,6 @@ instance Bifunctor BinaryTreeHouse where
   first f (Leaf a) = Leaf (f a)
   first f (Branch house left right) = Branch house (first f left) (first f right)
 
-  second :: (b -> c) -> BinaryTreeHouse a b -> BinaryTreeHouse a c
   second _ Nil = Nil
   second _ (Leaf a) = Leaf a
   second f (Branch house left right) = Branch (f house) (second f left) (second right)
