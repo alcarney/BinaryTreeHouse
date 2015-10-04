@@ -1,6 +1,6 @@
 * BinaryTreeHouse
 
-[![Build Status](https://travis-ci.org/alcarney/BinaryTreeHouse.svg?branch=master)](https://travis-ci.org/alcarney/BinaryTreeHouse)
+[[Build Status][(https://travis-ci.org/alcarney/BinaryTreeHouse.svg?branch=master)]]
 
 This Haskell package implements a data structure which for want of a better name I am calling a
 ~BinaryTreeHouse~ simply because it is essentially a binary tree, but with the difference that the
