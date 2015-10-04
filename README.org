@@ -1,7 +1,5 @@
 * BinaryTreeHouse
 
-[[(https://travis-ci.org/alcarney/BinaryTreeHouse.svg?branch=master)][Build Status]]
-
 This Haskell package implements a data structure which for want of a better name I am calling a
 ~BinaryTreeHouse~ simply because it is essentially a binary tree, but with the difference that the
 terminal "Leaf" nodes can have one type, while the "Branches" can have a completely different type.
