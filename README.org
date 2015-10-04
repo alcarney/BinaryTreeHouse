@@ -65,9 +65,9 @@ instance (Show a, Show b) => Show (BinaryTreeHouse a b) where
 
 showBinaryTreeHouse :: (Show a, Show b) => BinaryTreeHouse a b -> TextBlock
 showBinaryTreeHouse Nil = makeTextBlock [""]
-showBinaryTreeHouse (Leaf x) = showBox 0 x
+showBinaryTreeHouse (Leaf x) = showBox ('+', '-', '|') 0 x
 showBinaryTreeHouse (Branch h x y) = addToTheRight 0 (addToTheRight 0 left house) right
-  where house = showBox 0 h
+  where house = showBox ('+', '-', '|') 0 h
         left = padTop (height house) (showBinaryTreeHouse x)
         right = padTop (height house) (showBinaryTreeHouse y)
 #+end_src
@@ -96,7 +96,7 @@ instance Bifunctor BinaryTreeHouse where
 
   second _ Nil = Nil
   second _ (Leaf a) = Leaf a
-  second f (Branch house left right) = Branch (f house) (second f left) (second right)
+  second f (Branch house left right) = Branch (f house) (second f left) (second f right)
 #+end_src
 
 
@@ -117,8 +117,8 @@ module Data.BinaryTreeHouse
     growTree
 ) where
 
-import Data.TextBlock
 import Data.Bifunctor
+import Data.TextBlock
 
 <<binarytreehouse-def>>
 <<binarytreehouse-show-instance>>
@@ -171,6 +171,20 @@ spacePadding :: Int -> String
 spacePadding x = replicate x ' '
 
 #+end_src
+
+Particuarly for our use case it can be useful to define a ~showBox~ function where given a 3-tuple
+of ~Char~ for the characters to use for corners, top/bottom and side edges and an integer to define
+some padding surround a "Showable" object in an ASCII box.
+#+begin_src haskell :noweb-ref showbox-func
+showBox :: Show a => (Char, Char, Char) -> Int -> a -> TextBlock
+showBox (corner, top, edge) off x = makeTextBlock [topedge, itemedge, topedge]
+  where item = show x
+        showlength = length item + 2
+        offset = spacePadding off
+        topedge = [corner] ++ replicate (showlength + 2 * off) top ++ [corner]
+        itemedge = [edge] ++ offset ++ " " ++ item ++ " " ++ offset ++ [edge]
+#+end_src
+
 
 Before we get to combining TextBlocks we need to define our own zip function, since the zip
 implementation in Haskell's Prelude stops when one of the zip's arguments runs out the longer list
@@ -259,8 +273,9 @@ Finally! We can now create our ~TextBlock~ module
 #+begin_src haskell :tangle src/Data/TextBlock.hs :noweb yes :padline no
 module Data.TextBlock
 (
-    TextBlock,
+    TextBlock (..),
     makeTextBlock,
+    showBox,
 
     padRight,
     padLeft,
@@ -283,6 +298,7 @@ module Data.TextBlock
 
 -- Functions
 <<textblock-make>>
+<<showbox-func>>
 <<textblock-combination-funcs>>
 <<textblock-padding-funcs>>
 <<zip-funcs>>

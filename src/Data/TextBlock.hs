@@ -1,7 +1,8 @@
 module Data.TextBlock
 (
-    TextBlock,
+    TextBlock (..),
     makeTextBlock,
+    showBox,
 
     padRight,
     padLeft,
@@ -36,6 +37,13 @@ makeTextBlock str = TextBlock {width = newWidth, height = newHeight, contents = 
 spacePadding :: Int -> String
 spacePadding x = replicate x ' '
 
+showBox :: Show a => (Char, Char, Char) -> Int -> a -> TextBlock
+showBox (corner, top, edge) off x = makeTextBlock [topedge, itemedge, topedge]
+  where item = show x
+        showlength = length item + 2
+        offset = spacePadding off
+        topedge = [corner] ++ replicate (showlength + 2 * off) top ++ [corner]
+        itemedge = [edge] ++ offset ++ " " ++ item ++ " " ++ offset ++ [edge]
 -- Adds the second block on top of the first
 addOnTop :: Int -> TextBlock -> TextBlock -> TextBlock
 addOnTop pad x y = TextBlock {width = newWidth, height = newHeight, contents = newContents}
