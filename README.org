@@ -76,7 +76,7 @@ As you can see this makes use of the ~TextBlock~ datatype which handles the mani
 various blocks of text and allows us to align thing easily, since this is defined in another module
 I will not go into details here, please refer to the section on ~Showing the Tree~ for full details.
 
-** Bifunctor Instance
+*** Bifunctor Instance
 
 So it turns out that our ~BinaryTreeHouse~ is a ~Bifunctor~ which as far as I can tell it is
 essentially a ~Functor~ but with two independant datatypes. There are two ways of defining a
@@ -117,7 +117,7 @@ module Data.BinaryTreeHouse
     growTree
 ) where
 
-import Data.Block
+import Data.TextBlock
 import Data.Bifunctor
 
 <<binarytreehouse-def>>
