@@ -76,26 +76,30 @@ As you can see this makes use of the ~TextBlock~ datatype which handles the mani
 various blocks of text and allows us to align thing easily, since this is defined in another module
 I will not go into details here, please refer to the section on ~Showing the Tree~ for full details.
 
-Next I define three functions to let us map functions over various parts of the tree - the leaves,
-branches or both. Ideally I'd like us to be able to write a single function which encompassess all
-of these details and create a Functor instance for this datatype. However I am not sure if this
-could be a Functor or if a function is possible, still trying to get my head around that one.
-#+begin_src haskell :noweb-ref binarytreehouse-map
-binTreeMap :: (a -> b) -> BinaryTreeHouse a a -> BinaryTreeHouse bb
-binTreeMap _ Nil = Nil
-binTreeMap f (Leaf a) = Leaf (f a)
-binTreeMap f (Branch house left right) = Branch (f house) (binTreeMap f left) (binTreeMap f right)
+** Bifunctor Instance
 
-binTreeLeafMap :: (a -> b) -> BinaryTreeHouse a c -> BinaryTreeHouse b c
-binTreeLeafMap _ Nil = Nil
-binTreeLeafMap f (Leaf a) = Leaf (f a)
-binTreeLeafMap f (Branch house left right) = Branch house (binTreeLeafMap f left) (binTreeLeafMap f right)
+So it turns out that our ~BinaryTreeHouse~ is a ~Bifunctor~ which as far as I can tell it is
+essentially a ~Functor~ but with two independant datatypes. There are two ways of defining a
+~Bifunctor~ instance either by providing an implementation of ~bimap~ (given two functions f, g map
+them over the two datatypes) or providing implementations of functions ~first~ (given a function f
+map it over just the first datatype) and ~second~ (given a function f map it over just the second
+datatype).
 
-binTreeBranchMap :: (b -> c) -> BinaryTreeHouse a b -> BinaryTreeHouse a c
-binTreeBranchMap _ Nil = Nil
-binTreeBranchMap _ (Leaf a) = Leaf a
-binTreeBranchMap f (Branch house left right) = Branch (f house) (binTreeBranchMap f left) (binTreeBranchMap right)
+So below we create the ~Bifunctor~ instance by defining the ~first~ function to map over the leaves
+of the tree and the ~second~ function to map over the branches of the tree.
+#+begin_src haskell :noweb-ref binarytreehouse-bifunctor-instance
+instance Bifunctor BinaryTreeHouse where
+
+  first _ Nil = Nil
+  first f (Leaf a) = Leaf (f a)
+  first f (Branch house left right) = Branch house (first f left) (first f right)
+
+  second :: (b -> c) -> BinaryTreeHouse a b -> BinaryTreeHouse a c
+  second _ Nil = Nil
+  second _ (Leaf a) = Leaf a
+  second f (Branch house left right) = Branch (f house) (second f left) (second right)
 #+end_src
+
 
 Finally we define a function that allows you to combine two ~BinaryTreeHouse~ structures underneath
 a common branch.
@@ -111,18 +115,15 @@ module Data.BinaryTreeHouse
 (
     BinaryTreeHouse(..),
 
-    binTreeMap,
-    binTreeLeafMap,
-    binTreeBranchMap,
-
     growTree
 ) where
 
 import Data.Block
+import Data.Bifunctor
 
 <<binarytreehouse-def>>
 <<binarytreehouse-show-instance>>
-<<binarytreehouse-map>>
+<<binarytreehouse-bifunctor-instance>>
 <<binarytreehouse-growth>>
 #+end_src
 
