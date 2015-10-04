@@ -162,13 +162,14 @@ makeTextBlock :: [String] -> TextBlock
 makeTextBlock str = TextBlock {width = newWidth, height = newHeight, contents = newContents}
   where newWidth = maximum $ map length str
         newHeight = length str
-        newContents = map (makeLength newWidth str)
+        newContents = map (makeLength newWidth) str
         makeLength x s
             | length s < x = s ++ spacePadding (x - length s)
             | otherwise = s
 
 spacePadding :: Int -> String
 spacePadding x = replicate x ' '
+
 #+end_src
 
 Before we get to combining TextBlocks we need to define our own zip function, since the zip
@@ -183,6 +184,7 @@ zipWithPad :: (a -> b -> c) -> a -> b -> [a] -> [b] -> [c]
 zipWithPad f a _ [] ys = zipWith f (repeat a) ys
 zipWithPad f _ b xs [] = zipWith f xs (repeat b)
 zipwithPad f a b (x:xs) (y:ys) = f x y : zipWithPad f a b xs ys
+
 #+end_src
 
 In particular the above function comes in useful when we want to stitch two boxes together side by
@@ -190,8 +192,8 @@ side.
 #+begin_src haskell :noweb-ref zip-funcs
 sideBySideZip :: [String] -> [String] -> [String]
 sideBySideZip x y = zipWithPad (++) (spacePadding x') (spacePadding y') x y
-  where x' = max $ map length x
-        y' = max $ map length y
+  where x' = maximum $ map length x
+        y' = maximum $ map length y
 #+end_src
 
 We need to be able to combine TextBlocks together so we now write a number of functions which allow
@@ -211,7 +213,7 @@ addOnTop pad x y = TextBlock {width = newWidth, height = newHeight, contents = n
 addBelow :: Int -> TextBlock -> TextBlock -> TextBlock
 addBelow pad x y = addOnTop pad y x
 
-addToTheRight :: Int -> TextBlock -> TextBlock
+addToTheRight :: Int -> TextBlock -> TextBlock -> TextBlock
 addToTheRight pad x y = TextBlock {width = newWidth, height = newHeight, contents = newContents}
   where newWidth = width x + width y + pad
         newHeight = max (height x) (height y)
@@ -220,6 +222,7 @@ addToTheRight pad x y = TextBlock {width = newWidth, height = newHeight, content
 
 addToTheLeft :: Int -> TextBlock -> TextBlock -> TextBlock
 addToTheLeft pad x y = addToTheRight pad y x
+
 #+end_src
 
 It may also be useful to pad blocks simply for alignment purposes so we provide a number of
@@ -249,6 +252,7 @@ padLeft = padBlock SLeft
 
 padRight :: Int -> TextBlock -> TextBlock
 padRight = padBlock SRight
+
 #+end_src
 
 Finally! We can now create our ~TextBlock~ module

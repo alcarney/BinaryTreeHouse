@@ -28,13 +28,14 @@ makeTextBlock :: [String] -> TextBlock
 makeTextBlock str = TextBlock {width = newWidth, height = newHeight, contents = newContents}
   where newWidth = maximum $ map length str
         newHeight = length str
-        newContents = map (makeLength newWidth str)
+        newContents = map (makeLength newWidth) str
         makeLength x s
             | length s < x = s ++ spacePadding (x - length s)
             | otherwise = s
 
 spacePadding :: Int -> String
 spacePadding x = replicate x ' '
+
 -- Adds the second block on top of the first
 addOnTop :: Int -> TextBlock -> TextBlock -> TextBlock
 addOnTop pad x y = TextBlock {width = newWidth, height = newHeight, contents = newContents}
@@ -49,7 +50,7 @@ addOnTop pad x y = TextBlock {width = newWidth, height = newHeight, contents = n
 addBelow :: Int -> TextBlock -> TextBlock -> TextBlock
 addBelow pad x y = addOnTop pad y x
 
-addToTheRight :: Int -> TextBlock -> TextBlock
+addToTheRight :: Int -> TextBlock -> TextBlock -> TextBlock
 addToTheRight pad x y = TextBlock {width = newWidth, height = newHeight, contents = newContents}
   where newWidth = width x + width y + pad
         newHeight = max (height x) (height y)
@@ -58,6 +59,7 @@ addToTheRight pad x y = TextBlock {width = newWidth, height = newHeight, content
 
 addToTheLeft :: Int -> TextBlock -> TextBlock -> TextBlock
 addToTheLeft pad x y = addToTheRight pad y x
+
 padBlock :: Side -> Int -> TextBlock -> TextBlock
 padBlock _ 0 x = x
 padBlock STop pad x = addOnTop 0 x (makeTextBlock $ replicate pad $ spacePadding $ width x)
@@ -76,11 +78,13 @@ padLeft = padBlock SLeft
 
 padRight :: Int -> TextBlock -> TextBlock
 padRight = padBlock SRight
+
 zipWithPad :: (a -> b -> c) -> a -> b -> [a] -> [b] -> [c]
 zipWithPad f a _ [] ys = zipWith f (repeat a) ys
 zipWithPad f _ b xs [] = zipWith f xs (repeat b)
 zipwithPad f a b (x:xs) (y:ys) = f x y : zipWithPad f a b xs ys
+
 sideBySideZip :: [String] -> [String] -> [String]
 sideBySideZip x y = zipWithPad (++) (spacePadding x') (spacePadding y') x y
-  where x' = max $ map length x
-        y' = max $ map length y
+  where x' = maximum $ map length x
+        y' = maximum $ map length y
