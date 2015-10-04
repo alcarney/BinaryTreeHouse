@@ -54,7 +54,7 @@ addToTheRight pad x y = TextBlock {width = newWidth, height = newHeight, content
   where newWidth = width x + width y + pad
         newHeight = max (height x) (height y)
         x' = x {width = width x + 1, contents = map (++ spacePadding pad) (contents x)}
-        newContents = sizeBySideZip (contents x') (contents y)
+        newContents = sideBySideZip (contents x') (contents y)
 
 addToTheLeft :: Int -> TextBlock -> TextBlock -> TextBlock
 addToTheLeft pad x y = addToTheRight pad y x
@@ -79,7 +79,7 @@ padRight = padBlock SRight
 zipWithPad :: (a -> b -> c) -> a -> b -> [a] -> [b] -> [c]
 zipWithPad f a _ [] ys = zipWith f (repeat a) ys
 zipWithPad f _ b xs [] = zipWith f xs (repeat b)
-zipwithPad f a b (x:xs) (y:ys) = f x y : zipWithPadding f a b xs ys
+zipwithPad f a b (x:xs) (y:ys) = f x y : zipWithPad f a b xs ys
 sideBySideZip :: [String] -> [String] -> [String]
 sideBySideZip x y = zipWithPad (++) (spacePadding x') (spacePadding y') x y
   where x' = max $ map length x
