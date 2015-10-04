@@ -5,7 +5,7 @@ module Data.BinaryTreeHouse
     growTree
 ) where
 
-import Data.Block
+import Data.TextBlock
 import Data.Bifunctor
 
 data BinaryTreeHouse a b = Nil
